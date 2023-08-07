@@ -4,13 +4,16 @@ import tar from 'tar';
 import * as a from 'acorn';
 import * as walk from 'acorn-walk';
 
-async function buildPhase() {
+async function buildPhase(archiveName) {
     if (!fs.existsSync('archive')) {
+        fs.mkdirSync('archive');
+    } else {
+        await fs.rmSync('archive', { recursive: true })
         fs.mkdirSync('archive');
     }
 
     await tar.extract({
-        file: 'archive.tar',
+        file: archiveName,
         cwd: 'archive',
         sync: true,
     });
@@ -62,6 +65,14 @@ async function buildPhase() {
 }
 
 async function analyzePhase() {
+    if (fs.existsSync('result.json')) {
+        fs.rmSync('result.json');
+    }
+
+    if (fs.existsSync('result_ast.json')) {
+        fs.rmSync('result_ast.json');
+    }
+
     const file = fs.readFileSync('./bundle.esm.js', 'utf8');
     const ast = a.Parser.parse(file, { ecmaVersion: 9, sourceType: 'module' });
 
@@ -135,7 +146,18 @@ async function analyzePhase() {
 
 async function main() {
     try {
-        await buildPhase();
+        var archiveName = "archive.tar";
+        if (process.argv.length === 2) {
+            console.log('📦 No archive specified, using default archive.tar');
+        } else if (process.argv.length === 3) {
+            archiveName = process.argv[2];
+            console.log('📦 Using archive ' + archiveName);
+        } else {
+            console.error('❌ Too many arguments');
+            process.exit(1);
+        }
+
+        await buildPhase(archiveName);
         console.log('✨ Build phase completed');
         await analyzePhase();
         console.log('✨ Analyze phase completed');

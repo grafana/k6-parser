@@ -43,7 +43,7 @@ That's it! You should see something like this in the result.json file:
       "specifiers": [
         {
           "name": "check",
-          "usage": 1
+          "usage": 3
         },
         {
           "name": "sleep",
@@ -55,11 +55,11 @@ That's it! You should see something like this in the result.json file:
       "source": "k6/metrics",
       "specifiers": [
         {
-          "name": "Trend",
+          "name": "Counter",
           "usage": 1
         },
         {
-          "name": "Counter",
+          "name": "Trend",
           "usage": 1
         }
       ]
@@ -83,11 +83,13 @@ That's it! You should see something like this in the result.json file:
       ]
     },
     {
-      "source": "./lib/frontend/basic.js",
+      "source": "k6/experimental/browser",
       "specifiers": [
         {
-          "name": "LoadAndCheck",
-          "usage": 1
+          "name": "chromium",
+          "usage": {
+            "launch": 1
+          }
         }
       ]
     }

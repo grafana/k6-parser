@@ -2,7 +2,7 @@ import * as a from 'acorn';
 import * as walk from 'acorn-walk';
 import fs from 'fs';
 
-const file = fs.readFileSync('./scripts/02.js', 'utf8');
+const file = fs.readFileSync('./bundle.esm.js', 'utf8');
 const ast = a.Parser.parse(file, { ecmaVersion: 9, sourceType: 'module' });
 
 const imports = [];

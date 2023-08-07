@@ -21,6 +21,13 @@ async function buildPhase() {
 
     const inputOptions = {
         input: './archive/file/' + inputPath,
+        onwarn: function (warning) {
+            if (warning.code === 'UNRESOLVED_IMPORT') {
+                return;
+            } else {
+                console.warn(warning.message);
+            }
+        }
     };
 
     const outputOptionsList = [
@@ -33,15 +40,12 @@ async function buildPhase() {
     try {
         const bundle = await rollup(inputOptions);
 
-        // an array of file names this bundle depends on
-        console.log(bundle.watchFiles);
-
         for (const outputOptions of outputOptionsList) {
             // generate output specific code in-memory
             // you can call this function multiple times on the same bundle object
             // replace bundle.generate with bundle.write to directly write to disk
             const { output } = await bundle.generate(outputOptions);
-    
+
             for (const chunkOrAsset of output) {
                 if (chunkOrAsset.type === 'asset') {
                     fs.writeFileSync(outputOptions.file, chunkOrAsset.source);
@@ -62,8 +66,8 @@ async function analyzePhase() {
     const ast = a.Parser.parse(file, { ecmaVersion: 9, sourceType: 'module' });
 
     const imports = [];
-    const countByImport = {};
-    const countByMethod = {};
+    const usageByImport = {};
+    const usageByMethod = {};
 
     walk.ancestor(ast, {
         ImportDeclaration(node, _) {
@@ -83,19 +87,19 @@ async function analyzePhase() {
                     if (parentNode.type === 'MemberExpression') {
                         const method = parentNode.property.name;
 
-                        if (!countByMethod[importName]) {
-                            countByMethod[importName] = {};
+                        if (!usageByMethod[importName]) {
+                            usageByMethod[importName] = {};
                         }
-                        if (!countByMethod[importName][method]) {
-                            countByMethod[importName][method] = 1;
+                        if (!usageByMethod[importName][method]) {
+                            usageByMethod[importName][method] = 1;
                         } else {
-                            countByMethod[importName][method]++;
+                            usageByMethod[importName][method]++;
                         }
                     } else {
-                        if (!countByImport[importName]) {
-                            countByImport[importName] = 1;
+                        if (!usageByImport[importName]) {
+                            usageByImport[importName] = 1;
                         } else {
-                            countByImport[importName]++;
+                            usageByImport[importName]++;
                         }
                     }
                 }
@@ -103,19 +107,41 @@ async function analyzePhase() {
         }
     });
 
-    console.log('Imports:', imports);
-    console.log('Imports:', countByImport);
-    console.log('Methods:', countByMethod);
-
+    const result = imports.map(item => {
+        const specifiers = item.specifiers.map(specifierName => {
+          const usage = usageByImport[specifierName];
+          if (usageByMethod[specifierName]) {
+            return {
+              name: specifierName,
+              usage: usageByMethod[specifierName]
+            };
+          } else {
+            return {
+              name: specifierName,
+              usage: usage
+            };
+          }
+        });
+      
+        return {
+          source: item.source,
+          specifiers: specifiers
+        };
+    });
+      
+    fs.writeFileSync('result.json', JSON.stringify({ imports: result }, null, 2));
     fs.writeFileSync('result_ast.json', JSON.stringify(ast, null, 2));
 }
 
 async function main() {
     try {
         await buildPhase();
+        console.log('✨ Build phase completed');
         await analyzePhase();
+        console.log('✨ Analyze phase completed');
+        console.log('📜 Result saved to result.json');
     } catch (error) {
-        console.error('An error occurred:', error);
+        console.error('❌ An error occurred:', error);
         process.exit(1);
     }
 }

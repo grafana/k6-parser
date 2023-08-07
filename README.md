@@ -1,7 +1,9 @@
 # k6-parser
 This tool parses k6 archives and extracts information about:
 - What's being imported.
-- How those imports are being used (e.g. how many times).
+- How those imports are being used (e.g., how many times).
+
+> Note: ATM, this tool doesn't bundle and parse the HTTP/HTTPS imports, only the local ones.
 
 ## Usage
 

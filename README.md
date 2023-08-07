@@ -1,5 +1,5 @@
 # k6-parser
-Little tool to parse k6 archives, and extract information about what's being imported and how those imports are being used.
+This tool parses k6 archives and extracts information about what's being imported and how those imports are being used.
 
 ## Usage
 

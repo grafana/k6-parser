@@ -4,7 +4,7 @@ import tar from 'tar';
 import * as a from 'acorn';
 import * as walk from 'acorn-walk';
 
-async function buildPhase(archiveName) {
+async function bundlePhase(archiveName) {
     if (!fs.existsSync('archive')) {
         fs.mkdirSync('archive');
     } else {
@@ -157,8 +157,8 @@ async function main() {
             process.exit(1);
         }
 
-        await buildPhase(archiveName);
-        console.log('✨ Build phase completed');
+        await bundlePhase(archiveName);
+        console.log('✨ Bundle phase completed');
         await analyzePhase();
         console.log('✨ Analyze phase completed');
         console.log('📜 Result saved to result.json');

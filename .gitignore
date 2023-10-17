@@ -3,3 +3,4 @@ result.json
 node_modules
 bundle.esm.js
 archive
+parse_*

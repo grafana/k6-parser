@@ -4,26 +4,26 @@ import tar from 'tar';
 import * as a from 'acorn';
 import * as walk from 'acorn-walk';
 
-async function bundlePhase(archiveName) {
-    if (!fs.existsSync('archive')) {
-        fs.mkdirSync('archive');
+async function bundlePhase(randomID, archiveName) {
+    if (!fs.existsSync(randomID)) {
+        fs.mkdirSync(randomID);
     } else {
-        await fs.rmSync('archive', { recursive: true })
-        fs.mkdirSync('archive');
+        await fs.rmSync(randomID, { recursive: true })
+        fs.mkdirSync(randomID);
     }
 
     await tar.extract({
         file: archiveName,
-        cwd: 'archive',
+        cwd: randomID,
         sync: true,
     });
 
-    const metadata = JSON.parse(fs.readFileSync('archive/metadata.json', 'utf8'));
+    const metadata = JSON.parse(fs.readFileSync(`${randomID}/metadata.json`, 'utf8'));
     const filename = metadata.filename;
     const inputPath = filename.replace('file://', '');
 
     const inputOptions = {
-        input: './archive/file/' + inputPath,
+        input: `./${randomID}/file/` + inputPath,
         onwarn: function (warning) {
             if (warning.code === 'UNRESOLVED_IMPORT') {
                 return;
@@ -35,7 +35,7 @@ async function bundlePhase(archiveName) {
 
     const outputOptionsList = [
         {
-            file: 'bundle.esm.js',
+            file: `./${randomID}/bundle.esm.js`,
             format: 'esm',
         },
     ];
@@ -64,16 +64,19 @@ async function bundlePhase(archiveName) {
     }
 }
 
-async function analyzePhase() {
-    if (fs.existsSync('result.json')) {
-        fs.rmSync('result.json');
+async function analyzePhase(randomID) {
+    const resultFileName = `./${randomID}/result.json`;
+    const resultAstFileName = `./${randomID}/result_ast.json`;
+
+    if (fs.existsSync(resultFileName)) {
+        fs.rmSync(resultFileName);
     }
 
-    if (fs.existsSync('result_ast.json')) {
-        fs.rmSync('result_ast.json');
+    if (fs.existsSync(resultAstFileName)) {
+        fs.rmSync(resultAstFileName);
     }
 
-    const file = fs.readFileSync('./bundle.esm.js', 'utf8');
+    const file = fs.readFileSync(`./${randomID}/bundle.esm.js`, 'utf8');
     const ast = a.Parser.parse(file, { ecmaVersion: 9, sourceType: 'module' });
 
     const imports = [];
@@ -140,11 +143,12 @@ async function analyzePhase() {
         };
     });
       
-    fs.writeFileSync('result.json', JSON.stringify({ imports: result }, null, 2));
-    fs.writeFileSync('result_ast.json', JSON.stringify(ast, null, 2));
+    fs.writeFileSync(resultFileName, JSON.stringify({ imports: result }, null, 2));
+    fs.writeFileSync(resultAstFileName, JSON.stringify(ast, null, 2));
 }
 
 async function main() {
+    const randomID = `parse_${Math.random().toString(36).substring(7)}`;
     try {
         var archiveName = "archive.tar";
         if (process.argv.length === 2) {
@@ -157,11 +161,11 @@ async function main() {
             process.exit(1);
         }
 
-        await bundlePhase(archiveName);
+        await bundlePhase(randomID, archiveName);
         console.log('✨ Bundle phase completed');
-        await analyzePhase();
+        await analyzePhase(randomID);
         console.log('✨ Analyze phase completed');
-        console.log('📜 Result saved to result.json');
+        console.log(`📜 Result saved to ${randomID}/result.json`);
     } catch (error) {
         console.error('❌ An error occurred:', error);
         process.exit(1);

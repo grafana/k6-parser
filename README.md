@@ -1,7 +1,7 @@
 # k6-parser
 This tool parses k6 archives and extracts information about:
 - What's being imported.
-- How those imports are being used (e.g., how many times).
+- How many times those imports are being used.
 
 > Note: ATM, this tool doesn't bundle and parse the HTTP/HTTPS imports, only the local ones.
 
@@ -16,7 +16,7 @@ $ node parse.js
 📦 No archive specified, using default archive.tar
 ✨ Bundle phase completed
 ✨ Analyze phase completed
-📜 Result saved to result.json
+📜 Result saved to parse_dsijse/result.json
 ```
 
 By default, the tool will use the `archive.tar` file in the root of the repo. If you want to use a different archive, you can specify it as a command line argument:
@@ -24,7 +24,7 @@ By default, the tool will use the `archive.tar` file in the root of the repo. If
 $ node parse.js my-archive.tar
 ```
 
-That's it! You should see something like this in the result.json file:
+That's it! You should see something like this in the result.json file available in the `parse_"id"` folder:
 ```json
 {
   "imports": [

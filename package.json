@@ -25,5 +25,8 @@
     "rollup": "^3.27.2",
     "tar": "^6.1.15",
     "tar-fs": "^3.0.4"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.4.10"
   }
 }

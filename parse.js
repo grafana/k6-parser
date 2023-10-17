@@ -9,6 +9,8 @@ import express from 'express';
 import fileUpload from 'express-fileupload';
 
 const app = express();
+const port = process.env.PORT || 3000;
+
 app.use(express.json());
 app.use(fileUpload());
 
@@ -173,6 +175,10 @@ async function main() {
             fs.mkdirSync(archiveUploadsDir);
         }
 
+        app.get('/health', (res) => {
+            res.json({ status: 'ok' });
+        });
+
         app.post('/parse', async (req, res) => {
             try {
                 // CLIENT: curl -X POST -F "archive=@archive.tar" http://localhost:3000/parse
@@ -201,9 +207,8 @@ async function main() {
             }
         });
 
-        const port = process.env.PORT || 3000;
-        app.listen(port, () => {
-            console.log(`🚀 Server is running on port ${port}`);
+        app.listen(port,() => {
+            console.log('🚀 Server started on port ' + port);
         });
     } else {
         const randomID = generateRandomID();

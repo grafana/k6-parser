@@ -106,7 +106,7 @@ If you don't have a k6 archive, you can generate one using the `k6 archive` comm
 $ k6 archive -o archive.tar script.js
 ```
 
-# But: What if I want to run this tool in a server?
+### But: What if I want to run this tool in a server?
 
 If you pass the `--server` flag, the tool will start a server that will listen for POST requests in the `/parse` endpoint.
 

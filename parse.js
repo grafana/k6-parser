@@ -5,6 +5,9 @@ import * as a from 'acorn';
 import * as walk from 'acorn-walk';
 
 async function bundlePhase(randomID, archiveName) {
+    const archiveDir = `./${randomID}`;
+    const bundlePath = `${archiveDir}/bundle.esm.js`;
+
     if (!fs.existsSync(randomID)) {
         fs.mkdirSync(randomID);
     } else {
@@ -18,12 +21,12 @@ async function bundlePhase(randomID, archiveName) {
         sync: true,
     });
 
-    const metadata = JSON.parse(fs.readFileSync(`${randomID}/metadata.json`, 'utf8'));
+    const metadata = JSON.parse(fs.readFileSync(`${archiveDir}/metadata.json`, 'utf8'));
     const filename = metadata.filename;
     const inputPath = filename.replace('file://', '');
 
     const inputOptions = {
-        input: `./${randomID}/file/` + inputPath,
+        input: `${archiveDir}/file/` + inputPath,
         onwarn: function (warning) {
             if (warning.code === 'UNRESOLVED_IMPORT') {
                 return;
@@ -35,7 +38,7 @@ async function bundlePhase(randomID, archiveName) {
 
     const outputOptionsList = [
         {
-            file: `./${randomID}/bundle.esm.js`,
+            file: bundlePath,
             format: 'esm',
         },
     ];
@@ -62,9 +65,11 @@ async function bundlePhase(randomID, archiveName) {
         console.error(error);
         throw error;
     }
+
+    return { bundlePath: bundlePath };
 }
 
-async function analyzePhase(randomID) {
+async function analyzePhase(randomID, bundlePath) {
     const resultFileName = `./${randomID}/result.json`;
     const resultAstFileName = `./${randomID}/result_ast.json`;
 
@@ -76,7 +81,7 @@ async function analyzePhase(randomID) {
         fs.rmSync(resultAstFileName);
     }
 
-    const file = fs.readFileSync(`./${randomID}/bundle.esm.js`, 'utf8');
+    const file = fs.readFileSync(bundlePath, 'utf8');
     const ast = a.Parser.parse(file, { ecmaVersion: 9, sourceType: 'module' });
 
     const imports = [];
@@ -145,6 +150,8 @@ async function analyzePhase(randomID) {
       
     fs.writeFileSync(resultFileName, JSON.stringify({ imports: result }, null, 2));
     fs.writeFileSync(resultAstFileName, JSON.stringify(ast, null, 2));
+
+    return { imports: result, ast: ast };
 }
 
 async function main() {
@@ -161,9 +168,9 @@ async function main() {
             process.exit(1);
         }
 
-        await bundlePhase(randomID, archiveName);
+        var bundleRes = await bundlePhase(randomID, archiveName);
         console.log('✨ Bundle phase completed');
-        await analyzePhase(randomID);
+        await analyzePhase(randomID, bundleRes.bundlePath);
         console.log('✨ Analyze phase completed');
         console.log(`📜 Result saved to ${randomID}/result.json`);
     } catch (error) {

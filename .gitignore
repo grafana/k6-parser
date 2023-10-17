@@ -4,3 +4,4 @@ node_modules
 bundle.esm.js
 archive
 parse_*
+archive_uploads

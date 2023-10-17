@@ -20,6 +20,8 @@
   "dependencies": {
     "acorn": "^8.10.0",
     "acorn-walk": "^8.2.0",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.1",
     "rollup": "^3.27.2",
     "tar": "^6.1.15",
     "tar-fs": "^3.0.4"

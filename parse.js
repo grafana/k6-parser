@@ -4,6 +4,14 @@ import tar from 'tar';
 import * as a from 'acorn';
 import * as walk from 'acorn-walk';
 
+// Only used for server-mode
+import express from 'express';
+import fileUpload from 'express-fileupload';
+
+const app = express();
+app.use(express.json());
+app.use(fileUpload());
+
 async function bundlePhase(randomID, archiveName) {
     const archiveDir = `./${randomID}`;
     const bundlePath = `${archiveDir}/bundle.esm.js`;
@@ -154,28 +162,72 @@ async function analyzePhase(randomID, bundlePath) {
     return { imports: result, ast: ast };
 }
 
+function generateRandomID() {
+    return `parse_${Math.random().toString(36).substring(7)}`;
+}
+
 async function main() {
-    const randomID = `parse_${Math.random().toString(36).substring(7)}`;
-    try {
-        var archiveName = "archive.tar";
-        if (process.argv.length === 2) {
-            console.log('📦 No archive specified, using default archive.tar');
-        } else if (process.argv.length === 3) {
-            archiveName = process.argv[2];
-            console.log('📦 Using archive ' + archiveName);
-        } else {
-            console.error('❌ Too many arguments');
-            process.exit(1);
+    if (process.argv.includes('--server')) {
+        var archiveUploadsDir = './archive_uploads';
+        if (!fs.existsSync(archiveUploadsDir)) {
+            fs.mkdirSync(archiveUploadsDir);
         }
 
-        var bundleRes = await bundlePhase(randomID, archiveName);
-        console.log('✨ Bundle phase completed');
-        await analyzePhase(randomID, bundleRes.bundlePath);
-        console.log('✨ Analyze phase completed');
-        console.log(`📜 Result saved to ${randomID}/result.json`);
-    } catch (error) {
-        console.error('❌ An error occurred:', error);
-        process.exit(1);
+        app.post('/parse', async (req, res) => {
+            try {
+                // CLIENT: curl -X POST -F "archive=@archive.tar" http://localhost:3000/parse
+                const randomID = generateRandomID();
+                console.log(`📦 Archive uploaded, ID: ${randomID}`);
+                if (!req.files || !req.files.archive) {
+                    return res.status(400).json({ error: 'No archive file uploaded' });
+                }
+                const uploadedArchive = req.files.archive;
+                const archiveName = `${archiveUploadsDir}/${randomID}.tar`;
+                await uploadedArchive.mv(archiveName);
+
+                var bundleRes = await bundlePhase(randomID, archiveName);
+                console.log('✨ Bundle phase completed for ID: ' + randomID);
+                var analyzeRes = await analyzePhase(randomID, bundleRes.bundlePath);
+                console.log('✨ Analyze phase completed for ID: ' + randomID);
+
+                const result = {
+                    imports: analyzeRes.imports,
+                };
+
+                res.json(result);
+            } catch (error) {
+                console.error(`❌ An error occurred for ID: ${randomID}`, error);
+                res.status(500).json({ error: 'An error occurred' });
+            }
+        });
+
+        const port = process.env.PORT || 3000;
+        app.listen(port, () => {
+            console.log(`🚀 Server is running on port ${port}`);
+        });
+    } else {
+        const randomID = generateRandomID();
+        try {
+            var archiveName = "archive.tar";
+            if (process.argv.length === 2) {
+                console.log('📦 No archive specified, using default archive.tar');
+            } else if (process.argv.length === 3) {
+                archiveName = process.argv[2];
+                console.log('📦 Using archive ' + archiveName);
+            } else {
+                console.error('❌ Too many arguments');
+                process.exit(1);
+            }
+
+            var bundleRes = await bundlePhase(randomID, archiveName);
+            console.log('✨ Bundle phase completed');
+            await analyzePhase(randomID, bundleRes.bundlePath);
+            console.log('✨ Analyze phase completed');
+            console.log(`📜 Result saved to ${randomID}/result.json`);
+        } catch (error) {
+            console.error('❌ An error occurred:', error);
+            process.exit(1);
+        }
     }
 }
 

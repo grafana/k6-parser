@@ -112,7 +112,7 @@ If you pass the `--server` flag, the tool will start a server that will listen f
 
 Then, you can use cURL (or any other tool) to parse a specific archive:
 ```bash
-curl -X POST -F "archive=@archive.tar" http://localhost:3000/parse | jq '.'
+$ curl -X POST -F "archive=@archive.tar" http://localhost:3000/parse | jq '.'
 
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
